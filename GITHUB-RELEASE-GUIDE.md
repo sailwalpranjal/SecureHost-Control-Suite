@@ -46,7 +46,7 @@ gh repo create SecureHostSuite --public --description "Windows device and networ
 Open PowerShell in your project directory:
 
 ```powershell
-cd "c:\Users\hp\Desktop\Windows Suit"
+cd "c:\Users\hp\Desktop\SecureHost Control Suite"
 
 # Initialize git (if not already done)
 git init
@@ -82,7 +82,7 @@ packages/
 git add .
 
 # Create initial commit
-git commit -m "Initial commit: SecureHost Control Suite v1.0.0
+git commit -m "SecureHost Control Suite v1.0.0
 
 Features:
 - Instant device toggle (camera, microphone, USB, Bluetooth)
@@ -94,7 +94,7 @@ Features:
 "
 
 # Add remote (replace with your repository URL)
-git remote add origin https://github.com/yourusername/SecureHostSuite.git
+git remote add origin https://github.com/sailwalpranjal/SecureHost-Control-Suite.git
 
 # Push to GitHub
 git push -u origin master
@@ -107,7 +107,7 @@ git push -u origin master
 Run the packaging script:
 
 ```powershell
-cd "c:\Users\hp\Desktop\Windows Suit"
+cd "c:\Users\hp\Desktop\SecureHost Control Suite"
 
 # Create release package
 .\create-release-package.ps1 -Version "1.0.0"
@@ -289,7 +289,7 @@ cd "c:\Users\hp\Desktop\Windows Suit"
 ### Method 2: Using GitHub CLI
 
 ```powershell
-cd "c:\Users\hp\Desktop\Windows Suit"
+cd "c:\Users\hp\Desktop\SecureHost Control Suite"
 
 # Create release with ZIP file
 gh release create v1.0.0 `
