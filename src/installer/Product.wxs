@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"
+     xmlns:fire="http://schemas.microsoft.com/wix/FirewallExtension">
+
+  <?define ProductVersion="1.0.0.0" ?>
+  <?define ProductName="SecureHost Control Suite" ?>
+  <?define Manufacturer="SecureHost" ?>
+  <?define UpgradeCode="{12345678-1234-1234-1234-123456789ABC}" ?>
+
+  <Product Id="*"
+           Name="$(var.ProductName)"
+           Language="1033"
+           Version="$(var.ProductVersion)"
+           Manufacturer="$(var.Manufacturer)"
+           UpgradeCode="$(var.UpgradeCode)">
+
+    <Package InstallerVersion="500"
+             Compressed="yes"
+             InstallScope="perMachine"
+             Platform="x64"
+             Manufacturer="$(var.Manufacturer)"
+             Description="SecureHost Control Suite - Host Security Platform"
+             Comments="Production-ready host security and policy enforcement" />
+
+    <!-- Upgrade logic -->
+    <MajorUpgrade DowngradeErrorMessage="A newer version of $(var.ProductName) is already installed."
+                  AllowSameVersionUpgrades="yes" />
+
+    <!-- Media -->
+    <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
+
+    <!-- Icons -->
+    <Icon Id="ProductIcon" SourceFile="Resources\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="ProductIcon" />
+    <Property Id="ARPHELPLINK" Value="https://docs.securehost.example.com" />
+    <Property Id="ARPURLINFOABOUT" Value="https://www.securehost.example.com" />
+
+    <!-- Prerequisites -->
+    <PropertyRef Id="NETFRAMEWORK48" />
+    <Condition Message="This application requires .NET 8.0 Runtime. Please install it first.">
+      <![CDATA[Installed OR NETFRAMEWORK48]]>
+    </Condition>
+
+    <Condition Message="This application requires Windows 10 version 21H2 or later.">
+      <![CDATA[Installed OR (VersionNT >= 603)]]>
+    </Condition>
+
+    <Condition Message="This application requires a 64-bit operating system.">
+      <![CDATA[Installed OR VersionNT64]]>
+    </Condition>
+
+    <!-- Custom properties -->
+    <Property Id="INSTALLDIR">
+      <RegistrySearch Id="InstallDirRegistry"
+                      Type="raw"
+                      Root="HKLM"
+                      Key="SOFTWARE\SecureHost"
+                      Name="InstallPath" />
+    </Property>
+
+    <Property Id="INSTALL_DRIVERS" Value="1" />
+    <Property Id="AUTOSTART" Value="1" />
+
+    <!-- Feature tree -->
+    <Feature Id="Complete" Title="$(var.ProductName)" Level="1"
+             Display="expand" ConfigurableDirectory="INSTALLDIR">
+
+      <!-- Core Components (Required) -->
+      <Feature Id="CoreComponents" Title="Core Components" Level="1"
+               Description="SecureHost service and core libraries (required)"
+               AllowAdvertise="no">
+        <ComponentGroupRef Id="CoreFiles" />
+        <ComponentGroupRef Id="ServiceComponent" />
+        <ComponentGroupRef Id="DataDirectories" />
+      </Feature>
+
+      <!-- Kernel Drivers (Optional but recommended) -->
+      <Feature Id="KernelDrivers" Title="Kernel Drivers" Level="1"
+               Description="Network and device filter drivers (recommended for full enforcement)">
+        <ComponentGroupRef Id="DriverFiles" />
+      </Feature>
+
+      <!-- Management Clients -->
+      <Feature Id="ManagementClients" Title="Management Clients" Level="1"
+               Description="GUI and CLI management tools">
+        <ComponentGroupRef Id="GUIClient" />
+        <ComponentGroupRef Id="CLIClient" />
+        <ComponentGroupRef Id="StartMenuShortcuts" />
+      </Feature>
+
+      <!-- Documentation -->
+      <Feature Id="Documentation" Title="Documentation" Level="1"
+               Description="User guides and API documentation">
+        <ComponentGroupRef Id="DocumentationFiles" />
+      </Feature>
+    </Feature>
+
+    <!-- Directory structure -->
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFiles64Folder">
+        <Directory Id="INSTALLDIR" Name="SecureHost">
+          <Directory Id="DriversDir" Name="Drivers" />
+          <Directory Id="DocsDir" Name="docs" />
+        </Directory>
+      </Directory>
+
+      <Directory Id="ProgramMenuFolder">
+        <Directory Id="ApplicationProgramsFolder" Name="SecureHost Control Suite" />
+      </Directory>
+
+      <Directory Id="CommonAppDataFolder">
+        <Directory Id="SecureHostDataDir" Name="SecureHost">
+          <Directory Id="AuditDir" Name="Audit" />
+          <Directory Id="ConfigDir" Name="Config" />
+          <Directory Id="LogsDir" Name="Logs" />
+          <Directory Id="BackupsDir" Name="Backups" />
+        </Directory>
+      </Directory>
+    </Directory>
+
+    <!-- Component Groups -->
+
+    <!-- Core Files -->
+    <ComponentGroup Id="CoreFiles" Directory="INSTALLDIR">
+      <Component Id="SecureHostCore.dll" Guid="{A1111111-1111-1111-1111-111111111111}">
+        <File Id="SecureHostCore.dll" Source="$(var.BinDir)\SecureHostCore.dll" KeyPath="yes" />
+      </Component>
+      <Component Id="SecureHostService.exe" Guid="{B2222222-2222-2222-2222-222222222222}">
+        <File Id="SecureHostService.exe" Source="$(var.BinDir)\SecureHostService.exe" KeyPath="yes" />
+      </Component>
+      <Component Id="SecureHostService.deps.json" Guid="{C3333333-3333-3333-3333-333333333333}">
+        <File Id="SecureHostService.deps.json" Source="$(var.BinDir)\SecureHostService.deps.json" KeyPath="yes" />
+      </Component>
+      <Component Id="SecureHostService.runtimeconfig.json" Guid="{D4444444-4444-4444-4444-444444444444}">
+        <File Id="SecureHostService.runtimeconfig.json" Source="$(var.BinDir)\SecureHostService.runtimeconfig.json" KeyPath="yes" />
+      </Component>
+      <Component Id="appsettings.json" Guid="{E5555555-5555-5555-5555-555555555555}">
+        <File Id="appsettings.json" Source="$(var.BinDir)\appsettings.json" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Service Installation -->
+    <ComponentGroup Id="ServiceComponent" Directory="INSTALLDIR">
+      <Component Id="ServiceInstallation" Guid="{F6666666-6666-6666-6666-666666666666}">
+        <File Id="ServiceExe" Source="$(var.BinDir)\SecureHostService.exe" />
+
+        <!-- Install Windows Service -->
+        <ServiceInstall Id="SecureHostServiceInstall"
+                        Type="ownProcess"
+                        Name="SecureHostService"
+                        DisplayName="SecureHost Control Service"
+                        Description="Host security policy enforcement and audit service"
+                        Start="auto"
+                        Account="LocalSystem"
+                        ErrorControl="normal"
+                        Arguments=""
+                        Interactive="no">
+          <util:ServiceConfig FirstFailureActionType="restart"
+                             SecondFailureActionType="restart"
+                             ThirdFailureActionType="restart"
+                             RestartServiceDelayInSeconds="60" />
+        </ServiceInstall>
+
+        <!-- Start Service if AUTOSTART=1 -->
+        <ServiceControl Id="StartService"
+                        Name="SecureHostService"
+                        Start="install"
+                        Stop="both"
+                        Remove="uninstall"
+                        Wait="yes" />
+
+        <!-- Registry entries -->
+        <RegistryKey Root="HKLM" Key="SOFTWARE\SecureHost">
+          <RegistryValue Type="string" Name="InstallPath" Value="[INSTALLDIR]" KeyPath="yes" />
+          <RegistryValue Type="string" Name="Version" Value="$(var.ProductVersion)" />
+          <RegistryValue Type="string" Name="DataPath" Value="[SecureHostDataDir]" />
+        </RegistryKey>
+      </Component>
+    </ComponentGroup>
+
+    <!-- Driver Files -->
+    <ComponentGroup Id="DriverFiles" Directory="DriversDir">
+      <Component Id="SecureHostWFP.sys" Guid="{11111111-1111-1111-1111-111111111111}">
+        <File Id="SecureHostWFP.sys" Source="$(var.BinDir)\SecureHostWFP.sys" KeyPath="yes" />
+        <File Id="SecureHostWFP.inf" Source="$(var.BinDir)\SecureHostWFP.inf" />
+        <File Id="SecureHostWFP.cat" Source="$(var.BinDir)\SecureHostWFP.cat" />
+      </Component>
+
+      <Component Id="SecureHostDevice.sys" Guid="{22222222-2222-2222-2222-222222222222}">
+        <File Id="SecureHostDevice.sys" Source="$(var.BinDir)\SecureHostDevice.sys" KeyPath="yes" />
+        <File Id="SecureHostDevice.inf" Source="$(var.BinDir)\SecureHostDevice.inf" />
+        <File Id="SecureHostDevice.cat" Source="$(var.BinDir)\SecureHostDevice.cat" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- GUI Client -->
+    <ComponentGroup Id="GUIClient" Directory="INSTALLDIR">
+      <Component Id="SecureHostGUI.exe" Guid="{33333333-3333-3333-3333-333333333333}">
+        <File Id="SecureHostGUI.exe" Source="$(var.BinDir)\SecureHostGUI.exe" KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- CLI Client -->
+    <ComponentGroup Id="CLIClient" Directory="INSTALLDIR">
+      <Component Id="SecureHostCLI.exe" Guid="{44444444-4444-4444-4444-444444444444}">
+        <File Id="SecureHostCLI.exe" Source="$(var.BinDir)\SecureHostCLI.exe" KeyPath="yes" />
+
+        <!-- Add to PATH -->
+        <Environment Id="PATH"
+                     Name="PATH"
+                     Value="[INSTALLDIR]"
+                     Permanent="yes"
+                     Part="last"
+                     Action="set"
+                     System="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Start Menu Shortcuts -->
+    <ComponentGroup Id="StartMenuShortcuts" Directory="ApplicationProgramsFolder">
+      <Component Id="StartMenuShortcut" Guid="{55555555-5555-5555-5555-555555555555}">
+        <Shortcut Id="SecureHostGUIShortcut"
+                  Name="SecureHost Control"
+                  Description="SecureHost Control Suite Management Console"
+                  Target="[INSTALLDIR]SecureHostGUI.exe"
+                  WorkingDirectory="INSTALLDIR"
+                  Icon="ProductIcon" />
+
+        <Shortcut Id="UninstallShortcut"
+                  Name="Uninstall SecureHost"
+                  Description="Uninstalls SecureHost Control Suite"
+                  Target="[SystemFolder]msiexec.exe"
+                  Arguments="/x [ProductCode]" />
+
+        <RemoveFolder Id="ApplicationProgramsFolder" On="uninstall" />
+        <RegistryValue Root="HKCU"
+                       Key="Software\SecureHost"
+                       Name="installed"
+                       Type="integer"
+                       Value="1"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Data Directories -->
+    <ComponentGroup Id="DataDirectories" Directory="SecureHostDataDir">
+      <Component Id="AuditDirComponent" Guid="{66666666-6666-6666-6666-666666666666}" Directory="AuditDir">
+        <CreateFolder>
+          <util:PermissionEx User="SYSTEM" GenericAll="yes" />
+          <util:PermissionEx User="Administrators" GenericRead="yes" GenericExecute="yes" />
+        </CreateFolder>
+        <RegistryValue Root="HKLM"
+                       Key="SOFTWARE\SecureHost\Directories"
+                       Name="Audit"
+                       Type="string"
+                       Value="[AuditDir]"
+                       KeyPath="yes" />
+      </Component>
+
+      <Component Id="ConfigDirComponent" Guid="{77777777-7777-7777-7777-777777777777}" Directory="ConfigDir">
+        <CreateFolder>
+          <util:PermissionEx User="SYSTEM" GenericAll="yes" />
+        </CreateFolder>
+        <RegistryValue Root="HKLM"
+                       Key="SOFTWARE\SecureHost\Directories"
+                       Name="Config"
+                       Type="string"
+                       Value="[ConfigDir]"
+                       KeyPath="yes" />
+      </Component>
+
+      <Component Id="LogsDirComponent" Guid="{88888888-8888-8888-8888-888888888888}" Directory="LogsDir">
+        <CreateFolder>
+          <util:PermissionEx User="SYSTEM" GenericAll="yes" />
+          <util:PermissionEx User="Administrators" GenericRead="yes" />
+        </CreateFolder>
+        <RegistryValue Root="HKLM"
+                       Key="SOFTWARE\SecureHost\Directories"
+                       Name="Logs"
+                       Type="string"
+                       Value="[LogsDir]"
+                       KeyPath="yes" />
+      </Component>
+
+      <Component Id="BackupsDirComponent" Guid="{99999999-9999-9999-9999-999999999999}" Directory="BackupsDir">
+        <CreateFolder>
+          <util:PermissionEx User="SYSTEM" GenericAll="yes" />
+        </CreateFolder>
+        <RegistryValue Root="HKLM"
+                       Key="SOFTWARE\SecureHost\Directories"
+                       Name="Backups"
+                       Type="string"
+                       Value="[BackupsDir]"
+                       KeyPath="yes" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Documentation Files -->
+    <ComponentGroup Id="DocumentationFiles" Directory="DocsDir">
+      <Component Id="DocumentationComponent" Guid="{AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA}">
+        <File Id="architecture.md" Source="$(var.SourceDir)\docs\architecture.md" KeyPath="yes" />
+        <File Id="deployment.md" Source="$(var.SourceDir)\docs\deployment.md" />
+        <File Id="threatmodel.md" Source="$(var.SourceDir)\docs\threat-model.md" />
+        <File Id="README.md" Source="$(var.SourceDir)\README.md" />
+      </Component>
+    </ComponentGroup>
+
+    <!-- Custom Actions -->
+
+    <!-- Install Drivers (if INSTALL_DRIVERS=1) -->
+    <CustomAction Id="InstallWFPDriver"
+                  Directory="DriversDir"
+                  ExeCommand="cmd.exe /c pnputil /add-driver SecureHostWFP.inf /install"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore" />
+
+    <CustomAction Id="InstallDeviceDriver"
+                  Directory="DriversDir"
+                  ExeCommand="cmd.exe /c pnputil /add-driver SecureHostDevice.inf /install"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore" />
+
+    <!-- Uninstall Drivers -->
+    <CustomAction Id="UninstallDrivers"
+                  Directory="DriversDir"
+                  ExeCommand="cmd.exe /c for /f &quot;tokens=1&quot; %i in ('pnputil /enum-drivers ^| findstr /i SecureHost') do pnputil /delete-driver %i /uninstall"
+                  Execute="deferred"
+                  Impersonate="no"
+                  Return="ignore" />
+
+    <!-- Installation Sequence -->
+    <InstallExecuteSequence>
+      <!-- Install drivers after files are copied -->
+      <Custom Action="InstallWFPDriver" After="InstallFiles">
+        <![CDATA[NOT Installed AND INSTALL_DRIVERS="1"]]>
+      </Custom>
+      <Custom Action="InstallDeviceDriver" After="InstallWFPDriver">
+        <![CDATA[NOT Installed AND INSTALL_DRIVERS="1"]]>
+      </Custom>
+
+      <!-- Uninstall drivers before removing files -->
+      <Custom Action="UninstallDrivers" Before="RemoveFiles">
+        <![CDATA[Installed AND (REMOVE="ALL")]]>
+      </Custom>
+    </InstallExecuteSequence>
+
+    <!-- UI -->
+    <UI>
+      <UIRef Id="WixUI_FeatureTree" />
+      <UIRef Id="WixUI_ErrorProgressText" />
+
+      <Publish Dialog="WelcomeDlg" Control="Next" Event="NewDialog" Value="CustomizeDlg" Order="2">1</Publish>
+      <Publish Dialog="CustomizeDlg" Control="Back" Event="NewDialog" Value="WelcomeDlg" Order="2">1</Publish>
+    </UI>
+
+    <WixVariable Id="WixUILicenseRtf" Value="Resources\License.rtf" />
+    <WixVariable Id="WixUIBannerBmp" Value="Resources\Banner.bmp" />
+    <WixVariable Id="WixUIDialogBmp" Value="Resources\Dialog.bmp" />
+  </Product>
+</Wix>

@@ -1,0 +1,55 @@
+;
+; SecureHostWFP.inf - Windows Filtering Platform Callout Driver
+; Copyright (c) 2025 SecureHost Control Suite
+;
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = NetService
+ClassGuid   = {4D36E974-E325-11CE-BFC1-08002BE10318}
+Provider    = %ProviderString%
+DriverVer   = 12/14/2025,1.0.0.0
+CatalogFile = SecureHostWFP.cat
+PnpLockdown = 1
+
+[DestinationDirs]
+DefaultDestDir = 12 ; %windir%\system32\drivers
+SecureHostWFP.DriverFiles = 12
+
+[DefaultInstall.NT$ARCH$]
+OptionDesc = %ServiceDescription%
+CopyFiles  = SecureHostWFP.DriverFiles
+
+[DefaultInstall.NT$ARCH$.Services]
+AddService = %ServiceName%,,SecureHostWFP.Service
+
+[DefaultUninstall.NT$ARCH$]
+DelFiles = SecureHostWFP.DriverFiles
+
+[DefaultUninstall.NT$ARCH$.Services]
+DelService = %ServiceName%,0x200 ; SPSVCINST_STOPSERVICE
+
+[SecureHostWFP.DriverFiles]
+SecureHostWFP.sys,,,0x00000040 ; COPYFLG_OVERWRITE_OLDER_ONLY
+
+[SecureHostWFP.Service]
+DisplayName    = %ServiceName%
+Description    = %ServiceDescription%
+ServiceBinary  = %12%\SecureHostWFP.sys
+ServiceType    = 1  ; SERVICE_KERNEL_DRIVER
+StartType      = 1  ; SERVICE_SYSTEM_START (boot start for enforcement)
+ErrorControl   = 1  ; SERVICE_ERROR_NORMAL
+LoadOrderGroup = "NetworkProvider"
+Dependencies   = BFE ; Base Filtering Engine
+
+[SourceDisksNames]
+1 = %DiskName%,,,
+
+[SourceDisksFiles]
+SecureHostWFP.sys = 1
+
+[Strings]
+ProviderString = "SecureHost Control Suite"
+ServiceName = "SecureHostWFP"
+ServiceDescription = "SecureHost WFP Network Policy Enforcement Driver"
+DiskName = "SecureHost WFP Installation Disk"
