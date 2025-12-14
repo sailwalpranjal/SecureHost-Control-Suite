@@ -153,7 +153,7 @@ For issues or questions, visit: https://github.com/yourusername/SecureHostSuite
 
 ---
 Version: $Version
-Build Date: $(Get-Date -Format "yyyy-MM-dd HH:mm")
+Build Date: $(Get-Date -Format `"yyyy-MM-dd HH:mm`")
 "@
 
 $installGuide | Out-File -FilePath "$packageRoot\INSTALLATION.md" -Encoding UTF8
@@ -175,4 +175,3 @@ Write-Host ""
 Write-Host "Package Location: $zipPath" -ForegroundColor White
 Write-Host "Package Size: $($zipSize.ToString('0.00')) MB" -ForegroundColor White
 Write-Host ""
-Write-Host "Ready to upload to GitHub Releases!" -ForegroundColor Green
