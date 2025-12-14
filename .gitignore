@@ -1,0 +1,23 @@
+﻿# Build outputs
+bin/
+obj/
+dist/
+release-package/
+*.exe
+*.dll
+*.pdb
+*.cache
+
+# User-specific files
+.vs/
+.vscode/
+*.user
+*.suo
+
+# NuGet
+packages/
+*.nupkg
+
+# Logs and temp files
+*.log
+*.tmp

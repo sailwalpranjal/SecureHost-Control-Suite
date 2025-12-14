@@ -1,0 +1,65 @@
+;
+; SecureHostDevice.inf - Device Access Control Filter Driver
+; Copyright (c) 2025 SecureHost Control Suite
+;
+
+[Version]
+Signature   = "$WINDOWS NT$"
+Class       = System
+ClassGuid   = {4D36E97D-E325-11CE-BFC1-08002BE10318}
+Provider    = %ProviderString%
+DriverVer   = 12/14/2025,1.0.0.0
+CatalogFile = SecureHostDevice.cat
+PnpLockdown = 1
+
+[DestinationDirs]
+DefaultDestDir = 12 ; %windir%\system32\drivers
+
+[SourceDisksNames]
+1 = %DiskName%,,,
+
+[SourceDisksFiles]
+SecureHostDevice.sys = 1
+
+[Manufacturer]
+%ManufacturerName% = Standard,NT$ARCH$
+
+[Standard.NT$ARCH$]
+%SecureHostDevice.DeviceDesc% = SecureHostDevice_Device, Root\SecureHostDevice
+
+[SecureHostDevice_Device.NT]
+CopyFiles = Drivers_Dir
+
+[Drivers_Dir]
+SecureHostDevice.sys
+
+[SecureHostDevice_Device.NT.HW]
+AddReg = SecureHostDevice_Device.NT.AddReg
+
+[SecureHostDevice_Device.NT.AddReg]
+HKR,,DeviceCharacteristics,0x10001,0x0100
+HKR,,Security,,"D:P(A;;GA;;;BA)(A;;GA;;;SY)"
+
+[SecureHostDevice_Device.NT.Services]
+AddService = SecureHostDevice,%SPSVCINST_ASSOCSERVICE%, SecureHostDevice_Service_Inst
+
+[SecureHostDevice_Service_Inst]
+DisplayName    = %SecureHostDevice.SVCDESC%
+ServiceType    = 1               ; SERVICE_KERNEL_DRIVER
+StartType      = 3               ; SERVICE_DEMAND_START
+ErrorControl   = 1               ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\SecureHostDevice.sys
+
+[SecureHostDevice_Device.NT.Wdf]
+KmdfService = SecureHostDevice, SecureHostDevice_wdfsect
+
+[SecureHostDevice_wdfsect]
+KmdfLibraryVersion = 1.31
+
+[Strings]
+SPSVCINST_ASSOCSERVICE = 0x00000002
+ProviderString = "SecureHost Control Suite"
+ManufacturerName = "SecureHost"
+DiskName = "SecureHost Device Control Installation Disk"
+SecureHostDevice.DeviceDesc = "SecureHost Device Access Control Filter"
+SecureHostDevice.SVCDESC = "SecureHost Device Control Service"
